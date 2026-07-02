@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: secureapi-postgres
+    environment:
+      POSTGRES_DB: secureapi
+      POSTGRES_USER: secureapi
+      POSTGRES_PASSWORD: secureapi
+    ports:
+      - "5432:5432"
+    volumes:
+      - secureapi_pgdata:/var/lib/postgresql/data
+
+volumes:
+  secureapi_pgdata:

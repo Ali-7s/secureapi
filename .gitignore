@@ -1,0 +1,18 @@
+# Build output
+target/
+
+# IntelliJ
+.idea/
+
+# Claude Code
+.claude/
+
+# macOS junk
+.DS_Store
+
+# Secrets & local config
+.env
+application-local.yml
+
+# Personal planning docs
+docs/
