@@ -17,6 +17,11 @@ public enum SecurityEventType {
 
     // sys
     RATE_LIMIT_HIT,
-    GEO_MISMATCH,
-    ACCOUNT_LOCKED
+    ACCOUNT_LOCKED,
+
+    //api keys
+    API_KEY_CREATED,
+    API_KEY_REVOKED,
+    API_KEY_USED,
+    API_KEY_REJECTED
 }

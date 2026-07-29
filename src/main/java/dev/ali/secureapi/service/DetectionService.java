@@ -1,6 +1,5 @@
 package dev.ali.secureapi.service;
 
-import dev.ali.secureapi.model.Alert;
 import dev.ali.secureapi.model.RuleMatch;
 import dev.ali.secureapi.repository.AlertRepository;
 import dev.ali.secureapi.repository.DetectionRepository;
@@ -27,12 +26,8 @@ public class DetectionService {
             RuleMatch match = matches.get(0);
             log.info("Brute Force detected");
             String fingerprint = "BRUTE_FORCE" + ":" + match.entity();
-            Alert alert = new Alert("BRUTE_FORCE", "5", fingerprint, "10");
-            alertRepository.insert(alert);
-
 
         }
-
     }
 
 

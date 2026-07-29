@@ -22,7 +22,7 @@ public class DetectionRepository {
     public List<RuleMatch> findIpBruteForce(OffsetDateTime windowStart, OffsetDateTime windowEnd, int threshold) {
         log.info("threshold: {}", threshold);
         String sql = "SELECT host(source_ip) as entity, COUNT(*) as metricValue FROM security_events WHERE event_type = 'AUTH_FAILURE' AND ((created_at >= :window_end) AND (created_at <= :window_start)) GROUP BY source_ip HAVING COUNT(*)  >= :threshold";
-        return jdbc.sql(sql).params(Map.of("window_start", Timestamp.from(windowStart.toInstant()), "window_end", Timestamp.from(windowEnd.toInstant()), "threshold", threshold)).query(RuleMatch.class).list();
+         return jdbc.sql(sql).params(Map.of("window_start", Timestamp.from(windowStart.toInstant()), "window_end", Timestamp.from(windowEnd.toInstant()), "threshold", threshold)).query(RuleMatch.class).list();
     };
 
     public List<RuleMatch> findPasswordSpraying(OffsetDateTime windowStart, OffsetDateTime windowEnd, int threshold) {

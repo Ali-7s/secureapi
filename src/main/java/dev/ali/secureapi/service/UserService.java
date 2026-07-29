@@ -1,6 +1,7 @@
 package dev.ali.secureapi.service;
 
 import dev.ali.secureapi.dto.RegisterRequest;
+import dev.ali.secureapi.dto.UpdateUserProfileRequest;
 import dev.ali.secureapi.dto.UserSummaryDTO;
 import dev.ali.secureapi.exception.ApiException;
 import dev.ali.secureapi.exception.ResourceNotFoundException;
@@ -19,6 +20,7 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final AuthzService authzService;
 
     public User findById(Long id){
         Optional<User> user = userRepository.findById(id);
@@ -41,9 +43,9 @@ public class UserService {
         }
     }
 
-    public UserSummaryDTO updateUser(Long id, RegisterRequest registerRequest) {
-        Optional<User> user = userRepository.findById(id);
-        return new UserSummaryDTO();
+    public UserSummaryDTO updateUser(Long userId, Long requesterId, boolean isAdmin, UpdateUserProfileRequest updateUserProfileRequest) {
+        authzService.requireOwnerOrAdmin(userId, requesterId, isAdmin);
+        return userRepository.updateUser(updateUserProfileRequest, userId);
     }
 
 

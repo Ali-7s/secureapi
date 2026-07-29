@@ -7,7 +7,6 @@ import java.util.Map;
 
 @Getter
 public class SecurityContextEvent extends ApplicationEvent {
-    // Getters so the Listener can read the info
     private final SecurityEventType type;
     private final String principal;
     private final Map<String, String> metadata;

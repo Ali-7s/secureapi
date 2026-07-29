@@ -1,9 +1,13 @@
 package dev.ali.secureapi.controller;
 
+import dev.ali.secureapi.dto.UpdateUserProfileRequest;
 import dev.ali.secureapi.dto.UserSummaryDTO;
 import dev.ali.secureapi.model.ApiResponse;
 import dev.ali.secureapi.service.UserService;
+import dev.ali.secureapi.utils.SecurityUtils;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,15 +26,18 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User profile", userSummaryDTO));
     }
 
-//    @PutMapping("/{id}")
-//    public ResponseEntity<ApiResponse<UserSummaryDTO>> updateUser(
-//            @PathVariable Long id,
-//            @RequestBody @Valid UpdateUserProfileRequest request,
-//            Authentication auth) {
-//
-//        // SECURITY: The Service must throw 403 Forbidden if auth.getName()
-//        // does not belong to the user with ID {id}.
-//        UserSummaryDTO updatedUser = userService.updateUser(id, request, auth.getName());
-//        return ResponseEntity.ok(ApiResponse.success("Profile updated", updatedUser));
-//    }
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<UserSummaryDTO>> updateUser(
+            @PathVariable Long id,
+            @RequestBody @Valid UpdateUserProfileRequest request,
+            Authentication auth) {
+
+
+
+        Long requesterId = SecurityUtils.getCurrentUser(auth).getId();
+        boolean isAdmin = SecurityUtils.isAdmin(auth);
+
+        UserSummaryDTO updatedUser = userService.updateUser(id, requesterId, isAdmin, request);
+        return ResponseEntity.ok(ApiResponse.success("Profile updated", updatedUser));
+    }
 }

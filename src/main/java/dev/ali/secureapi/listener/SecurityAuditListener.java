@@ -35,52 +35,29 @@ public class SecurityAuditListener {
         HttpServletRequest request = attrs.getRequest();
         String detailsJson = objectMapper.writeValueAsString(event.getMetadata());
         SecurityEvent securityEvent = new SecurityEvent(event.getType(), event.getPrincipal(), request.getRemoteAddr(), detailsJson);
-
+        securityEventRepository.insert(securityEvent);
 
         switch (event.getType()) {
-            case AUTH_SUCCESS:
-                securityEventRepository.insert(securityEvent);
-                detectionService.findBruteForce(OffsetDateTime.now(), OffsetDateTime.now().minusMinutes(10), 10);
-                break;
             case AUTH_FAILURE:
-                securityEventRepository.insert(securityEvent);
-                detectionService.findBruteForce(OffsetDateTime.now(), OffsetDateTime.now().minusMinutes(10), 10);
                 break;
             case AUTH_REPLAY:
-                securityEventRepository.insert(securityEvent);
-                break;
-            case AUTH_LOGOUT:
-                securityEventRepository.insert(securityEvent);
                 break;
 
             // authorization
             case AUTHZ_DENIED:
-                securityEventRepository.insert(securityEvent);
                 break;
             case AUTHZ_IDOR:
-                securityEventRepository.insert(securityEvent);
                 break;
 
             // jwt
             case JWT_EXPIRED:
-                securityEventRepository.insert(securityEvent);
                 break;
             case JWT_TAMPERED:
-                securityEventRepository.insert(securityEvent);
                 break;
             case JWT_MALFORMED:
-                securityEventRepository.insert(securityEvent);
                 break;
-
             // sys
             case RATE_LIMIT_HIT:
-                securityEventRepository.insert(securityEvent);
-                break;
-            case GEO_MISMATCH:
-                securityEventRepository.insert(securityEvent);
-                break;
-            case ACCOUNT_LOCKED:
-                securityEventRepository.insert(securityEvent);
                 break;
         }
 
