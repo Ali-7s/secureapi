@@ -55,50 +55,45 @@ public class AuthService {
         return userService.createUser(user);
     }
 
-// TODO: Add Bucket4J Rate Limiter?
-public UserSummaryDTO loginUser(String email, String password, HttpServletResponse response) throws JsonProcessingException {
-    log.info("Attempting login for user: {}", email);
+    // TODO: Add Bucket4J Rate Limiter?
+    public UserSummaryDTO loginUser(String email, String password, HttpServletResponse response) throws JsonProcessingException {
+        log.info("Attempting login for user: {}", email);
 
-    try {
-        // 1. The Critical Junction: This is where Spring Security does the heavy lifting.
-        // If credentials are wrong, this throws an AuthenticationException immediately.
-        Authentication auth = authenticationProvider.authenticate(
-                new UsernamePasswordAuthenticationToken(email, password)
-        );
+        try {
 
-        // 2. Success Path
-        log.info("Authentication successful for: {}", email);
+            Authentication auth = authenticationProvider.authenticate(
+                    new UsernamePasswordAuthenticationToken(email, password)
+            );
 
-        User user = userService.findByEmail(auth.getName())
-                .orElseThrow(() -> new ApiException(404, "User not found after authentication", null));
 
-        UserSummaryDTO userSummaryDTO = new UserSummaryDTO();
-        userSummaryDTO.setId(user.getId());
-        userSummaryDTO.setUsername(user.getUsername());
-        userSummaryDTO.setDisplayName(user.getDisplayName());
+            log.info("Authentication successful for: {}", email);
 
-        // Publish SUCCESS event (for your audit trail/baseline)
-        publisher.publishEvent(new SecurityContextEvent(this,SecurityEventType.AUTH_SUCCESS, email,Map.of("status", "success")));
+            User user = userService.findByEmail(auth.getName())
+                    .orElseThrow(() -> new ApiException(404, "User not found after authentication", null));
 
-        // Token generation
-        String accessToken = jwtService.generateAccessToken(userSummaryDTO.getId());
-        String refreshToken = jwtService.generateRefreshToken(userSummaryDTO.getId());
+            UserSummaryDTO userSummaryDTO = new UserSummaryDTO();
+            userSummaryDTO.setId(user.getId());
+            userSummaryDTO.setUsername(user.getUsername());
+            userSummaryDTO.setDisplayName(user.getDisplayName());
 
-        cookieService.addCookie(response, accessToken, "access_token", 3600);
-        cookieService.addCookie(response, refreshToken, "refresh_token", 86400);
+            publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.AUTH_SUCCESS, email, Map.of("status", "success")));
 
-        return userSummaryDTO;
+            String accessToken = jwtService.generateAccessToken(userSummaryDTO.getId());
+            String refreshToken = jwtService.generateRefreshToken(userSummaryDTO.getId());
 
-    } catch (AuthenticationException e) {
-        // 3. Failure Path: Caught before the GlobalExceptionHandler sees it.
-        log.warn("Authentication failed for user: {} - Reason: {}", email, e.getMessage());
+            cookieService.addCookie(response, accessToken, "access_token", 3600);
+            cookieService.addCookie(response, refreshToken, "refresh_token", 86400);
 
-        // Publish FAILURE event (This is what your Detection Engine scans!)
-        publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.AUTH_FAILURE, email, Map.of("failure", e.getMessage())));
-        // Re-throw so the GlobalExceptionHandler can send the 401/403 response
-        throw e;
+            return userSummaryDTO;
+
+        } catch (AuthenticationException e) {
+            log.warn("Authentication failed for user: {} - Reason: {}", email, e.getMessage());
+
+            publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.AUTH_FAILURE, email, Map.of("failure", e.getMessage())));
+            throw e;
+        }
     }
-}
+
     @Transactional
     public void refreshAccessToken(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = jwtService.getTokenFromCookies(request, "refresh_token");
@@ -107,35 +102,30 @@ public UserSummaryDTO loginUser(String email, String password, HttpServletRespon
             throw new ApiException(401, "Refresh token is missing", null);
         }
 
-        // Verify JWT signature and expiration before checking DB
         Long userId = Long.valueOf(jwtService.getSubjectFromRefreshToken(refreshToken));
         String jti = jwtService.getRefreshTokenJTI(refreshToken);
 
         User user = userService.findById(userId);
         RefreshToken dbToken = refreshTokenRepository.findByJti(jti);
 
-        // Replay Detection: If token is already revoked, it's a security event
         if (dbToken.revokedAt() != null) {
             log.warn("SECURITY ALERT: Refresh token replay detected for user ID: {}. JTI: {}", userId, jti);
             log.info(dbToken.toString());
+            publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.AUTH_REPLAY, user.getEmail(), Map.of("victim userId", userId.toString(), "victim JTI", jti)));
             refreshTokenRepository.revoke(dbToken.userId());
             throw new ApiException(403, "Security violation: Token already used", null);
         }
 
-        // Validate the token matches the user
         if (!jwtService.validateRefreshToken(user, refreshToken)) {
             throw new ApiException(401, "Invalid refresh token", null);
         }
 
-        // Rotation: Issue new pair and revoke old one
         String newRefreshToken = jwtService.generateRefreshToken(userId);
         String newAccessToken = jwtService.generateAccessToken(userId);
         String newJti = jwtService.getRefreshTokenJTI(newRefreshToken);
 
-        // Revoke old token with guard: revoked_at IS NULL
         refreshTokenRepository.revoke(jti, newJti);
 
-        // Add cookies to response
         cookieService.addCookie(response, newAccessToken, "access_token", 3600);
         cookieService.addCookie(response, newRefreshToken, "refresh_token", 86400);
     }
