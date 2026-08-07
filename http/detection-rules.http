@@ -1,0 +1,309 @@
+### =====================================================================
+### Detection rule triggers — dev testing
+###
+### Thresholds below match your rules as built:
+###   BruteForceRule      threshold 10, window 10 min  (>=10 AUTH_FAILURE from one IP)
+###   PasswordSprayingRule threshold 10, window 10 min (>=10 DISTINCT principals from one IP)
+###   KeyIdorRule          threshold 10, window 10 min (>=10 AUTHZ_IDOR from one IP)
+###
+### If you change a rule's threshold(), change the repeat count here to match.
+### All requests come from 127.0.0.1, so every rule groups them under one entity.
+### =====================================================================
+
+@host = http://localhost:8080
+@goodPassword = SuperSecret123
+@wrongPassword = definitely-wrong-password
+
+
+### =====================================================================
+### SETUP — run once. Creates the victim + the attacker.
+### =====================================================================
+
+### victim: owns the API key that gets probed in the KEY_IDOR section
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "victim@test.local",
+  "username": "victim_user",
+  "displayName": "Victim User",
+  "password": "{{goodPassword}}"
+}
+
+### attacker: does the probing
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "attacker@test.local",
+  "username": "attacker_user",
+  "displayName": "Attacker User",
+  "password": "{{goodPassword}}"
+}
+
+
+### =====================================================================
+### BRUTE_FORCE — 11 failed logins, SAME email, one IP.
+### Rule counts COUNT(*) of AUTH_FAILURE per IP. 11 > threshold 10.
+### Run all 11 in under 10 minutes or they fall out of the window.
+### =====================================================================
+
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+
+
+### =====================================================================
+### PASSWORD_SPRAY — 11 failed logins, 11 DIFFERENT emails, one IP.
+### Rule gates on COUNT(DISTINCT principal). The accounts need not exist —
+### a failed login against an unknown email still publishes AUTH_FAILURE.
+###
+### NOTE: these ALSO count toward BRUTE_FORCE (both read AUTH_FAILURE),
+### so running this section alone will trip both rules. That's correct
+### behaviour, not a bug — one burst can match several patterns.
+### =====================================================================
+
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "spray01@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "spray02@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "spray03@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "spray04@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "spray05@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "spray06@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "spray07@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "spray08@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "spray09@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "spray10@test.local", "password": "{{wrongPassword}}"}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "spray11@test.local", "password": "{{wrongPassword}}"}
+
+
+### =====================================================================
+### KEY_IDOR — 11 attempts to revoke a key you don't own.
+### Each rejected attempt publishes AUTHZ_IDOR from AuthzService.
+###
+### /api/keys is cookie-authenticated and NOT CSRF-exempt, so the DELETEs
+### must echo the XSRF-TOKEN cookie back as a header. The login handlers
+### below capture it automatically.
+### =====================================================================
+
+### 1. login as VICTIM and capture their CSRF token
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "victim@test.local", "password": "{{goodPassword}}"}
+
+> {%
+    const c = response.headers.valuesOf("Set-Cookie").find(h => h.startsWith("XSRF-TOKEN="));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+%}
+
+### 2. victim creates a key — capture its id as the IDOR target
+POST {{host}}/api/keys
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{"label": "victim-key", "scopes": "ALERTS_READ"}
+
+> {%
+    client.global.set("victimKeyId", response.body.data.apiKeyDTO.id);
+    client.log("victim key id = " + client.global.get("victimKeyId"));
+%}
+
+### 3. login as ATTACKER (replaces the session cookie + captures their CSRF token)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "attacker@test.local", "password": "{{goodPassword}}"}
+
+> {%
+    const c = response.headers.valuesOf("Set-Cookie").find(h => h.startsWith("XSRF-TOKEN="));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+%}
+
+### 4-14. attacker probes the victim's key 11 times — each should be 403 + AUTHZ_IDOR
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+
+### =====================================================================
+### VERIFY — the part that actually proves a rule fired.
+### Firing requests is not the test; a row in `alerts` is the test.
+###
+### Run in a terminal:
+###
+###   # events that landed (the rules' raw input)
+###   docker exec secureapi-postgres psql -U secureapi -d secureapi -c \
+###     "SELECT event_type, host(source_ip) AS ip, COUNT(*), COUNT(DISTINCT principal) AS distinct_principals
+###      FROM security_events WHERE created_at > now() - interval '10 minutes'
+###      GROUP BY event_type, source_ip ORDER BY 3 DESC;"
+###
+###   # alerts produced (the rules' output)
+###   docker exec secureapi-postgres psql -U secureapi -d secureapi -c \
+###     "SELECT id, rule_name, severity, fingerprint, created_at, suppress_until FROM alerts ORDER BY id DESC;"
+###
+### SUPPRESSION CHECK — the one most people skip:
+###   run a section TWICE, then confirm the alert count did NOT grow and
+###   suppress_until moved forward. That proves the ON CONFLICT upsert works.
+###
+### NOTE ON TIMEZONES: psql via `docker exec` uses the container's UTC clock,
+### but your app writes JVM-local (PDT) wall-clock times — a 7-hour gap.
+### Use `now() - interval` comparisons (as above) rather than eyeballing
+### timestamps, or rows will look hours old when they're seconds old.
+###
+### RESET between runs (optional):
+###   docker exec secureapi-postgres psql -U secureapi -d secureapi -c \
+###     "DELETE FROM alerts; DELETE FROM security_events;"
+### =====================================================================
