@@ -1,4 +1,4 @@
 package dev.ali.secureapi.model;
 
-public record RuleMatch(String entity, long metricValue) {
+public record RuleMatch(String entity, long count) {
 }

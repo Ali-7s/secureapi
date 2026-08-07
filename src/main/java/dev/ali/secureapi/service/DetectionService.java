@@ -1,35 +1,50 @@
 package dev.ali.secureapi.service;
 
+import dev.ali.secureapi.detection.DetectionRule;
 import dev.ali.secureapi.model.RuleMatch;
 import dev.ali.secureapi.repository.AlertRepository;
-import dev.ali.secureapi.repository.DetectionRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 
 @Slf4j
 @Service
 public class DetectionService {
-    private final DetectionRepository detectionRepository;
+    private final List<DetectionRule> detectionRules;
     private final AlertRepository alertRepository;
 
-    public DetectionService(DetectionRepository detectionRepository, AlertRepository alertRepository) {
-        this.detectionRepository = detectionRepository;
+    public DetectionService(List<DetectionRule> detectionRules, AlertRepository alertRepository) {
+        this.detectionRules = detectionRules;
         this.alertRepository = alertRepository;
     }
 
-    public void findBruteForce(OffsetDateTime windowStart, OffsetDateTime windowEnd, int threshold) {
-        List<RuleMatch> matches = detectionRepository.findIpBruteForce(windowStart, windowEnd, threshold);
-        if(!matches.isEmpty()){
-            RuleMatch match = matches.get(0);
-            log.info("Brute Force detected");
-            String fingerprint = "BRUTE_FORCE" + ":" + match.entity();
 
-        }
+    public void runRule(DetectionRule rule, OffsetDateTime now) {
+        long bucketNumber = now.toEpochSecond() / rule.suppressFor().toSeconds();
+        long bucketStartSeconds = rule.suppressFor().toSeconds() * bucketNumber;
+        Instant timeBucket = Instant.ofEpochSecond(bucketStartSeconds);
+
+
+        List<RuleMatch> matches = rule.evaluate(now);
+        matches.forEach(m -> {
+            String fingerprint = rule.name() + ":" + m.entity() + ":" + timeBucket;
+            alertRepository.insert(rule.name().name(), rule.severity().name(), fingerprint, rule.suppressFor().toString());
+        });
     }
 
+    public void runAll(OffsetDateTime now) {
+        detectionRules.forEach(r -> {
+            try {
+                runRule(r, now);
+            } catch (Exception e) {
+                log.error("Rule name - {} failed", r.name(), e);
+            }
+        });
+
+    }
 
 
 }

@@ -21,7 +21,10 @@ management:
 
 jwt:
   access:
-    secret:  ${JWT_ACCESS_SECRET}
+    secret: ${JWT_ACCESS_SECRET}
   refresh:
     secret: ${JWT_REFRESH_SECRET}
+
+detection:
+  scan-interval-ms: 10000
 
