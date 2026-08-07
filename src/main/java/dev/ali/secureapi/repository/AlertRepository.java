@@ -18,15 +18,15 @@ public class AlertRepository {
 
     public Long insert(String ruleName, String severity, String fingerprint, String suppressUntil) {
         String sql = """
-                INSERT INTO alerts(rule_name, severity, fingerprint, suppress_until) VALUES (:rule_name, :severity, :fingerprint, now() + CAST(:suppress_until AS INTERVAL)) ON CONFLICT (fingerprint) DO UPDATE SET suppress_until = excluded.suppress_until RETURNING id;
-""";
-       return  jdbc.sql(sql).params(Map.of("rule_name", ruleName, "severity", severity, "fingerprint", fingerprint, "suppress_until", suppressUntil)).query(Long.class).single();
+                                INSERT INTO alerts(rule_name, severity, fingerprint, suppress_until) VALUES (:rule_name, :severity, :fingerprint, now() + CAST(:suppress_until AS INTERVAL)) ON CONFLICT (fingerprint) WHERE acknowledged_at IS NULL DO UPDATE SET suppress_until = excluded.suppress_until RETURNING id;
+                """;
+        return jdbc.sql(sql).params(Map.of("rule_name", ruleName, "severity", severity, "fingerprint", fingerprint, "suppress_until", suppressUntil)).query(Long.class).single();
 
     }
 
 
     public List<Alert> findAll(int page, int size) {
-        int offset = page*size;
+        int offset = page * size;
         String sql = "SELECT * FROM alerts ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
 
         return jdbc.sql(sql).param("limit", size).param("offset", offset).query(Alert.class).list();
