@@ -56,7 +56,6 @@ public class AuthController {
     }
 
 
-
     @GetMapping("/refresh")
     public ResponseEntity<ApiResponse<Void>> refreshAccessToken(HttpServletResponse response, HttpServletRequest request) {
         authService.refreshAccessToken(request, response);

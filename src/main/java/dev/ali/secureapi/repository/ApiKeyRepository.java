@@ -21,7 +21,7 @@ public class ApiKeyRepository {
 
 
     public Long insert(Long userId, String label, String keyPrefix, String keyHash, String scopes, Instant expiresAt) {
-       String sql = "INSERT INTO api_keys(user_id, label, key_prefix, key_hash, scopes, expires_at) VALUES (:user_id, :label, :key_prefix, :key_hash, :scopes, :expires_at) RETURNING id";
+        String sql = "INSERT INTO api_keys(user_id, label, key_prefix, key_hash, scopes, expires_at) VALUES (:user_id, :label, :key_prefix, :key_hash, :scopes, :expires_at) RETURNING id";
         return jdbc.sql(sql).params(Map.of("user_id", userId, "label", label, "key_prefix", keyPrefix, "key_hash", keyHash, "scopes", scopes, "expires_at", Timestamp.from(expiresAt))).query(Long.class).single();
     }
 

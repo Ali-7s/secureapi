@@ -12,11 +12,11 @@ public record ApiResponse<T>(
         Object errors
 ) {
     public static <T> ApiResponse<T> success(String message, T data) {
-        return new ApiResponse<>(LocalDateTime.now(),  message, data, null);
+        return new ApiResponse<>(LocalDateTime.now(), message, data, null);
     }
 
-    public static ApiResponse<Void> error( String message, Object errors) {
-        return new ApiResponse<>(LocalDateTime.now(),  message, null, errors);
+    public static ApiResponse<Void> error(String message, Object errors) {
+        return new ApiResponse<>(LocalDateTime.now(), message, null, errors);
     }
 }
 

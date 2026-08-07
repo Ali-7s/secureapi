@@ -26,9 +26,9 @@ public class AlertController {
     }
 
     @GetMapping("")
-    public List<Alert> getAlerts(Authentication auth,             @RequestParam(defaultValue = "0") int page,
+    public List<Alert> getAlerts(Authentication auth, @RequestParam(defaultValue = "0") int page,
                                  @RequestParam(defaultValue = "100") int size) {
-        if(!(auth.getPrincipal() instanceof ApiKey key)) {
+        if (!(auth.getPrincipal() instanceof ApiKey key)) {
 
             throw new ApiException(403, "Authorization Denied", null);
         }
@@ -39,7 +39,7 @@ public class AlertController {
 
     @PostMapping("/{id}/acknowledge")
     public ResponseEntity<ApiResponse<Void>> acknowledge(@PathVariable Long id, Authentication auth) {
-        if(!(auth.getPrincipal() instanceof ApiKey key)) {
+        if (!(auth.getPrincipal() instanceof ApiKey key)) {
 
             throw new ApiException(403, "Authorization Denied", null);
         }

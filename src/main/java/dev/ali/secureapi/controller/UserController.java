@@ -33,7 +33,6 @@ public class UserController {
             Authentication auth) {
 
 
-
         Long requesterId = SecurityUtils.getCurrentUser(auth).getId();
         boolean isAdmin = SecurityUtils.isAdmin(auth);
 

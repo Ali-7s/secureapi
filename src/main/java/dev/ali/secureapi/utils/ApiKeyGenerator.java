@@ -1,6 +1,5 @@
 package dev.ali.secureapi.utils;
 
-import org.apache.logging.log4j.message.Message;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -11,7 +10,6 @@ import java.util.Base64;
 
 @Service
 public class ApiKeyGenerator {
-
 
 
     public String newSecretKey() {

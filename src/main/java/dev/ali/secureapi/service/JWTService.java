@@ -51,7 +51,7 @@ public class JWTService {
         UUID uuid = UUID.randomUUID();
         Date issuedAt = new Date();
         Date expiresAt = new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION_MS);
-        String jwt =  JWT.create()
+        String jwt = JWT.create()
                 .withJWTId(uuid.toString())
                 .withSubject(userId.toString())
                 .withExpiresAt(expiresAt)
@@ -60,6 +60,7 @@ public class JWTService {
         refreshTokenRepository.insert(userId, uuid.toString(), expiresAt.toInstant(), issuedAt.toInstant());
         return jwt;
     }
+
     public boolean validateRefreshToken(User user, String token) {
         try {
             DecodedJWT decodedJWT = refreshTokenVerifier.verify(token);

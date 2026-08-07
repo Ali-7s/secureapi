@@ -16,7 +16,7 @@ import java.util.Optional;
 
 @Repository
 @Slf4j
-public class UserRepository  {
+public class UserRepository {
 
     private final JdbcClient jdbc;
 

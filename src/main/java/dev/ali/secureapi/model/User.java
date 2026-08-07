@@ -1,7 +1,10 @@
 package dev.ali.secureapi.model;
 
 import dev.ali.secureapi.enums.Role;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.Date;
 

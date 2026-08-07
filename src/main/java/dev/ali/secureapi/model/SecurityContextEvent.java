@@ -3,6 +3,7 @@ package dev.ali.secureapi.model;
 import dev.ali.secureapi.enums.SecurityEventType;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
+
 import java.util.Map;
 
 @Getter

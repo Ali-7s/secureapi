@@ -22,9 +22,9 @@ public class UserService {
     private final UserRepository userRepository;
     private final AuthzService authzService;
 
-    public User findById(Long id){
+    public User findById(Long id) {
         Optional<User> user = userRepository.findById(id);
-        if(user.isPresent()){
+        if (user.isPresent()) {
             return user.get();
         } else
             throw new ResourceNotFoundException("User not found");

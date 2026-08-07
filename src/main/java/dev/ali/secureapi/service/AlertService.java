@@ -28,15 +28,14 @@ public class AlertService {
     }
 
     public void acknowledgeAlert(String keyScopes, Long alertId, ApiKey key) {
-        authzService.requireScope(keyScopes, ApiKeysScope.ALERTS_WRITE, key );
+        authzService.requireScope(keyScopes, ApiKeysScope.ALERTS_WRITE, key);
         int returnedInt = alertRepository.acknowledgeAlert(alertId);
-        if(returnedInt < 1) {
+        if (returnedInt < 1) {
             throw new ApiException(404, "Acknowledgement failed", null);
         }
 
 
     }
-
 
 
 }

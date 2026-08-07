@@ -15,5 +15,7 @@ public enum ApiKeysScope {
             set.add(ApiKeysScope.valueOf(piece.trim()));
         }
         return set;
-    };
+    }
+
+    ;
 }

@@ -31,13 +31,13 @@ public class GlobalExceptionHandler {
                 .orElse("Invalid input");
 
         return ResponseEntity.badRequest()
-                .body(ApiResponse.error( message, errors));
+                .body(ApiResponse.error(message, errors));
     }
 
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(ResourceNotFoundException ex) {
-        return new ResponseEntity<>(ApiResponse.error( "The requested resource could not be found.", null), NOT_FOUND);
+        return new ResponseEntity<>(ApiResponse.error("The requested resource could not be found.", null), NOT_FOUND);
     }
 
 
@@ -56,12 +56,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
-        return new ResponseEntity<>(ApiResponse.error( "Incorrect email or password. Please try again.", null), UNAUTHORIZED);
+        return new ResponseEntity<>(ApiResponse.error("Incorrect email or password. Please try again.", null), UNAUTHORIZED);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
-        return new ResponseEntity<>(ApiResponse.error( "An unexpected internal server error occurred.", null), INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(ApiResponse.error("An unexpected internal server error occurred.", null), INTERNAL_SERVER_ERROR);
     }
 
 

@@ -44,10 +44,10 @@ public class ApiKeyService {
         String secret = apiKeyGenerator.newSecretKey();
         String hashString = apiKeyGenerator.hash(secret);
         Long id = apiKeyRepository.insert(ownerId, req.label(), secret.substring(0, 12), hashString, req.scopes(), Instant.now().plus(90, ChronoUnit.DAYS));
-        ApiKeyDTO apiKeyDTO = new ApiKeyDTO(id, req.label(), secret.substring(0, 12), req.scopes(), Instant.now(), null, Instant.now().plus(90, ChronoUnit.DAYS), null );
+        ApiKeyDTO apiKeyDTO = new ApiKeyDTO(id, req.label(), secret.substring(0, 12), req.scopes(), Instant.now(), null, Instant.now().plus(90, ChronoUnit.DAYS), null);
         publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.API_KEY_CREATED, String.valueOf(ownerId), Map.of("keyId", String.valueOf(id), "prefix", apiKeyDTO.keyPrefix(), "scopes", apiKeyDTO.scopes())));
 
-        return new NewApiKeyResponse(apiKeyDTO, secret );
+        return new NewApiKeyResponse(apiKeyDTO, secret);
     }
 
     public List<ApiKeyDTO> listMyKeys(Long ownerId) {

@@ -9,7 +9,7 @@ import org.springframework.security.core.Authentication;
 public class SecurityUtils {
 
     public static User getCurrentUser(Authentication authentication) {
-        if(authentication == null) {
+        if (authentication == null) {
             throw new ApiException(401, "Authentication required. Please log in", null);
         }
 
@@ -21,7 +21,7 @@ public class SecurityUtils {
     }
 
     public static CustomUserDetails getCurrentUserDetails(Authentication authentication) {
-        if(authentication == null) {
+        if (authentication == null) {
             throw new ApiException(401, "Authentication required. Please log in", null);
         }
 
