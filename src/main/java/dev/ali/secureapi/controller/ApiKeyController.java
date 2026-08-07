@@ -31,9 +31,10 @@ public class ApiKeyController {
     public ResponseEntity<ApiResponse<NewApiKeyResponse>> createKey(Authentication auth, @RequestBody CreateApiKeyRequest req) throws NoSuchAlgorithmException {
         Long ownerId = SecurityUtils.getCurrentUser(auth).getId();
         NewApiKeyResponse key = apiKeyService.createKey(ownerId, req);
-        // return 201
         return ResponseEntity.status(HttpStatus.CREATED).body(success("Key created", key));
-    };
+    }
+
+    ;
 
     @GetMapping("")
     public ResponseEntity<ApiResponse<List<ApiKeyDTO>>> listMyKeys(Authentication auth) {

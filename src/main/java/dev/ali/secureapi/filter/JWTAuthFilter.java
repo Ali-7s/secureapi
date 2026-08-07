@@ -30,7 +30,7 @@ public class JWTAuthFilter extends OncePerRequestFilter {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        if ( auth == null || !auth.isAuthenticated()) {
+        if (auth == null || !auth.isAuthenticated()) {
             String accessToken = jwtService.getTokenFromCookies(request, "access_token");
 
             try {
@@ -44,9 +44,6 @@ public class JWTAuthFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             } catch (Exception e) {
-                // SECURITY BEST PRACTICE:
-                // Don't log the full stack trace or send details to the client.
-                // Just clear the context and let the entry point handle the 401.
                 SecurityContextHolder.clearContext();
                 log.warn("JWT validation failed: {}", e.getMessage());
             }

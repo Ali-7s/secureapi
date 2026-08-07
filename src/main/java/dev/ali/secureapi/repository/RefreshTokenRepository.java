@@ -17,7 +17,6 @@ public class RefreshTokenRepository {
     private final JdbcClient jdbc;
 
 
-
     public RefreshTokenRepository(JdbcClient jdbc) {
         this.jdbc = jdbc;
     }
@@ -30,7 +29,6 @@ public class RefreshTokenRepository {
 
     public RefreshToken findByJti(String jti) {
         String sql = "SELECT * FROM refresh_tokens WHERE jti = :jti";
-        // TODO: Returns token record
         return jdbc.sql(sql).param("jti", jti).query(RefreshToken.class).single();
     }
 
