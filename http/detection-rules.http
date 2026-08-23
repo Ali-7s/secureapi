@@ -2,21 +2,52 @@
 ### Detection rule triggers — dev testing
 ###
 ### Thresholds below match your rules as built:
-###   BruteForceRule      threshold 10, window 10 min  (>=10 AUTH_FAILURE from one IP)
-###   PasswordSprayingRule threshold 10, window 10 min (>=10 DISTINCT principals from one IP)
-###   KeyIdorRule          threshold 10, window 10 min (>=10 AUTHZ_IDOR from one IP)
+###   BruteForceRule       threshold 10, window 10 min  (>=10 AUTH_FAILURE from one IP)
+###   PasswordSprayingRule threshold 10, window 10 min  (>=10 DISTINCT principals from one IP)
+###   KeyIdorRule          threshold 10, window 10 min  (>=10 AUTHZ_IDOR from one IP)
 ###
 ### If you change a rule's threshold(), change the repeat count here to match.
-### All requests come from 127.0.0.1, so every rule groups them under one entity.
+###
+### ---------------------------------------------------------------------
+### READ THIS BEFORE RUNNING — the CSRF behaviour that breaks the
+### KEY_IDOR section:
+###
+### 1. This app ROTATES the CSRF token on every authenticated request. Each
+###    response carries TWO Set-Cookie headers for XSRF-TOKEN: an expiry
+###    (`XSRF-TOKEN=; Max-Age=0`) FIRST, then the replacement. So the value
+###    that worked a moment ago is already dead, and a handler that grabs
+###    the first match captures the EMPTY one. Every handler below therefore
+###    re-captures, and requires a non-empty value.
+###
+### 2. Spring only emits Set-Cookie when it ISSUES a token. On a plain
+###    /api/auth/login it stays silent, so the `if (c)` guards keep the last
+###    good value rather than clobbering it with nothing.
+###
+### => Run this file TOP TO BOTTOM. Every request in the KEY_IDOR section
+###    depends on the token handed back by the one before it.
+### => Re-running only part of it? Clear the HTTP Client's cookies first
+###    (the `.idea/httpRequests/http-client.cookies` file), then start
+###    from the top.
+###
+### The handlers assert loudly, so a bad run fails on the spot instead of
+### quietly 403-ing for the next 12 requests.
+### ---------------------------------------------------------------------
+###
+### Host is pinned to 127.0.0.1, NOT localhost: `localhost` can resolve to
+### the IPv6 loopback (::1) on macOS, and the rules group by source_ip. A
+### client that resolves to ::1 lands in a DIFFERENT bucket than one that
+### resolves to 127.0.0.1, so a split-stack run can leave both halves under
+### the threshold and fire nothing.
 ### =====================================================================
 
-@host = http://localhost:8080
+@host = http://127.0.0.1:8080
 @goodPassword = SuperSecret123
 @wrongPassword = definitely-wrong-password
 
 
 ### =====================================================================
 ### SETUP — run once. Creates the victim + the attacker.
+### The first request is also where the CSRF token gets captured.
 ### =====================================================================
 
 ### victim: owns the API key that gets probed in the KEY_IDOR section
@@ -29,6 +60,20 @@ Content-Type: application/json
   "displayName": "Victim User",
   "password": "{{goodPassword}}"
 }
+
+> {%
+    // Capture on the FIRST request — a clean run is guaranteed to issue a
+    // token here. Fires on 201 and on 409 (user already exists) alike.
+    // The regex demands a non-empty value so the `XSRF-TOKEN=; Max-Age=0`
+    // expiry header is skipped; it is emitted BEFORE the real one.
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+
+    client.test("CSRF token available", function () {
+        const t = client.global.get("xsrf");
+        client.assert(!!t, "No XSRF token. Clear the HTTP Client cookies and re-run from the top of this file.");
+    });
+%}
 
 ### attacker: does the probing
 POST {{host}}/api/auth/register
@@ -51,67 +96,100 @@ Content-Type: application/json
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "victim@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "victim@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "victim@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "victim@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "victim@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "victim@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "victim@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "victim@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "victim@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "victim@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "victim@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "victim@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 
 ### =====================================================================
@@ -127,67 +205,100 @@ Content-Type: application/json
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "spray01@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "spray01@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "spray02@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "spray02@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "spray03@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "spray03@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "spray04@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "spray04@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "spray05@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "spray05@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "spray06@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "spray06@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "spray07@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "spray07@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "spray08@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "spray08@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "spray09@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "spray09@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "spray10@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "spray10@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 ###
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "spray11@test.local", "password": "{{wrongPassword}}"}
+{
+  "email": "spray11@test.local",
+  "password": "{{wrongPassword}}"
+}
 
 
 ### =====================================================================
@@ -195,19 +306,29 @@ Content-Type: application/json
 ### Each rejected attempt publishes AUTHZ_IDOR from AuthzService.
 ###
 ### /api/keys is cookie-authenticated and NOT CSRF-exempt, so the DELETEs
-### must echo the XSRF-TOKEN cookie back as a header. The login handlers
-### below capture it automatically.
+### must echo the XSRF-TOKEN cookie back as a header. That token was
+### captured by the SETUP request at the top of this file — see the CSRF
+### note in the header if this section 403s.
 ### =====================================================================
 
-### 1. login as VICTIM and capture their CSRF token
+### 1. login as VICTIM
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "victim@test.local", "password": "{{goodPassword}}"}
+{
+  "email": "victim@test.local",
+  "password": "{{goodPassword}}"
+}
 
 > {%
-    const c = response.headers.valuesOf("Set-Cookie").find(h => h.startsWith("XSRF-TOKEN="));
+    // Refresh only if this response carried a token. Spring stays silent on
+    // login, so the guard preserves the value captured at the top of the file.
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
     if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+
+    client.test("victim logged in", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
 %}
 
 ### 2. victim creates a key — capture its id as the IDOR target
@@ -215,67 +336,160 @@ POST {{host}}/api/keys
 Content-Type: application/json
 X-XSRF-TOKEN: {{xsrf}}
 
-{"label": "victim-key", "scopes": "ALERTS_READ"}
+{
+  "label": "victim-key",
+  "scopes": "ALERTS_READ"
+}
 
 > {%
-    client.global.set("victimKeyId", response.body.data.apiKeyDTO.id);
-    client.log("victim key id = " + client.global.get("victimKeyId"));
+    // THIS is where the token rotates — an authenticated state-changing
+    // request. Miss this capture and every DELETE below dies on CSRF.
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+
+    client.test("key created", function () {
+        client.assert(response.status === 201,
+            "Expected 201, got " + response.status +
+            ". A 403 here means the CSRF token is missing or stale — clear the " +
+            "HTTP Client cookies and re-run this file from the top.");
+    });
+
+    // Stored as a string: an unresolved {{victimKeyId}} would silently turn the
+    // DELETEs below into requests against a key that never existed.
+    if (response.status === 201) {
+        client.global.set("victimKeyId", String(response.body.data.apiKeyDTO.id));
+        client.log("victim key id = " + client.global.get("victimKeyId"));
+    }
 %}
 
-### 3. login as ATTACKER (replaces the session cookie + captures their CSRF token)
+### 3. login as ATTACKER (replaces the session cookies)
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{"email": "attacker@test.local", "password": "{{goodPassword}}"}
+{
+  "email": "attacker@test.local",
+  "password": "{{goodPassword}}"
+}
 
 > {%
-    const c = response.headers.valuesOf("Set-Cookie").find(h => h.startsWith("XSRF-TOKEN="));
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
     if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+
+    client.test("attacker logged in", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    client.test("IDOR target known", function () {
+        client.assert(!!client.global.get("victimKeyId"),
+            "No victimKeyId — request 2 did not return a key, so the DELETEs below would probe nothing.");
+    });
 %}
 
 ### 4-14. attacker probes the victim's key 11 times — each should be 403 + AUTHZ_IDOR
+### Every probe rotates the token again, so each handler feeds the next request.
 DELETE {{host}}/api/keys/{{victimKeyId}}
 X-XSRF-TOKEN: {{xsrf}}
+
+> {%
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+
+    client.test("IDOR rejected with 403", function () {
+        client.assert(response.status === 403,
+            "Expected 403 (AUTHZ_IDOR), got " + response.status +
+            ". A 404 means victimKeyId is wrong; a 401 means the attacker is not logged in.");
+    });
+%}
 
 ###
 DELETE {{host}}/api/keys/{{victimKeyId}}
 X-XSRF-TOKEN: {{xsrf}}
 
-###
-DELETE {{host}}/api/keys/{{victimKeyId}}
-X-XSRF-TOKEN: {{xsrf}}
+> {%
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+%}
 
 ###
 DELETE {{host}}/api/keys/{{victimKeyId}}
 X-XSRF-TOKEN: {{xsrf}}
 
-###
-DELETE {{host}}/api/keys/{{victimKeyId}}
-X-XSRF-TOKEN: {{xsrf}}
+> {%
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+%}
 
 ###
 DELETE {{host}}/api/keys/{{victimKeyId}}
 X-XSRF-TOKEN: {{xsrf}}
 
-###
-DELETE {{host}}/api/keys/{{victimKeyId}}
-X-XSRF-TOKEN: {{xsrf}}
+> {%
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+%}
 
 ###
 DELETE {{host}}/api/keys/{{victimKeyId}}
 X-XSRF-TOKEN: {{xsrf}}
 
-###
-DELETE {{host}}/api/keys/{{victimKeyId}}
-X-XSRF-TOKEN: {{xsrf}}
+> {%
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+%}
 
 ###
 DELETE {{host}}/api/keys/{{victimKeyId}}
 X-XSRF-TOKEN: {{xsrf}}
 
+> {%
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+%}
+
 ###
 DELETE {{host}}/api/keys/{{victimKeyId}}
 X-XSRF-TOKEN: {{xsrf}}
+
+> {%
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+%}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+> {%
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+%}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+> {%
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+%}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+> {%
+    const c = response.headers.valuesOf("Set-Cookie").find(h => /^XSRF-TOKEN=[^;]+/.test(h));
+    if (c) client.global.set("xsrf", c.split(";")[0].split("=")[1]);
+%}
+
+###
+DELETE {{host}}/api/keys/{{victimKeyId}}
+X-XSRF-TOKEN: {{xsrf}}
+
+> {%
+    client.test("11 probes landed — KEY_IDOR should fire on the next sweep", function () {
+        client.assert(response.status === 403, "Expected 403, got " + response.status);
+    });
+%}
 
 
 ### =====================================================================
@@ -294,9 +508,17 @@ X-XSRF-TOKEN: {{xsrf}}
 ###   docker exec secureapi-postgres psql -U secureapi -d secureapi -c \
 ###     "SELECT id, rule_name, severity, fingerprint, created_at, suppress_until FROM alerts ORDER BY id DESC;"
 ###
+### CHECK THE IP IN THE FINGERPRINT. Every entity should read 127.0.0.1.
+### A `::1` means something reached the app over IPv6 and its events were
+### counted as a separate attacker.
+###
 ### SUPPRESSION CHECK — the one most people skip:
 ###   run a section TWICE, then confirm the alert count did NOT grow and
 ###   suppress_until moved forward. That proves the ON CONFLICT upsert works.
+###
+### Alert ids will show gaps (2 -> 121). That is normal: Postgres allocates
+### a sequence value before testing the conflict, so every suppressed upsert
+### burns an id. Gaps are not lost rows.
 ###
 ### NOTE ON TIMEZONES: psql via `docker exec` uses the container's UTC clock,
 ### but your app writes JVM-local (PDT) wall-clock times — a 7-hour gap.
