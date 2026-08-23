@@ -2,6 +2,6 @@ package dev.ali.secureapi.model;
 
 import java.time.Instant;
 
-public record Alert(Long id, String ruleName, String severity, String fingerprint, String suppressUntil,
+public record Alert(Long id, String ruleName, String severity, String fingerprint, Instant suppressUntil,
                     Instant createdAt, Instant acknowledgedAt) {
 }
