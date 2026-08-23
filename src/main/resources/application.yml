@@ -27,4 +27,11 @@ jwt:
 
 detection:
   scan-interval-ms: 10000
+lockout:
+  threshold: 10
+  window: PT15M
+  duration: PT15M
+rate-limit:
+  capacity: 20
+  refill-period: PT1M
 

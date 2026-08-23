@@ -2,6 +2,7 @@ package dev.ali.secureapi.config;
 
 import dev.ali.secureapi.filter.ApiKeyAuthFilter;
 import dev.ali.secureapi.filter.JWTAuthFilter;
+import dev.ali.secureapi.filter.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +25,7 @@ public class SecurityConfig {
     private final AuthenticationProvider authenticationProvider;
     private final JWTAuthFilter jwtAuthFilter;
     private final ApiKeyAuthFilter apiKeyAuthFilter;
+    private final RateLimitFilter rateLimitFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -44,7 +46,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/logout", "/api/auth/me").authenticated()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class).addFilterBefore(apiKeyAuthFilter, JWTAuthFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class).addFilterBefore(apiKeyAuthFilter, JWTAuthFilter.class).addFilterBefore(rateLimitFilter, ApiKeyAuthFilter.class);
 
         http.headers(headers -> headers
                 .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'none'; frame-ancestors 'none'"))
