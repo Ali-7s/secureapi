@@ -9,6 +9,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +19,12 @@ import static org.springframework.http.HttpStatus.*;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    private final HttpServletRequest servletRequest;
+
+    public GlobalExceptionHandler(HttpServletRequest servletRequest) {
+        this.servletRequest = servletRequest;
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException ex) {
@@ -61,6 +68,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
+        log.error("An error occurred at path: {}", servletRequest.getServletPath(), ex);
         return new ResponseEntity<>(ApiResponse.error("An unexpected internal server error occurred.", null), INTERNAL_SERVER_ERROR);
     }
 
