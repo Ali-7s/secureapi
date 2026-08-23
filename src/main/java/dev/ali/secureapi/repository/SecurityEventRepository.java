@@ -9,7 +9,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Repository
@@ -34,5 +36,10 @@ public class SecurityEventRepository {
         hashMap.put("created_at", Timestamp.from(securityEvent.timestamp()));
 
         jdbc.sql(sql).params(hashMap).update();
+    }
+
+    public int countFailureSinceLastSuccess(String principal, OffsetDateTime windowStart) {
+        String sql = "SELECT COUNT(*) as count FROM security_events WHERE event_type = 'AUTH_FAILURE' AND principal = :principal AND created_at >= GREATEST(:window_start, (SELECT MAX(created_at)FROM security_events WHERE event_type = 'AUTH_SUCCESS' AND principal = :principal))";
+        return jdbc.sql(sql).params(Map.of("principal", principal, "window_start", windowStart)).query(Integer.class).single();
     }
 }

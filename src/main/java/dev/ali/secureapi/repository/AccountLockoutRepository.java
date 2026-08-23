@@ -9,10 +9,10 @@ import java.util.Map;
 import java.util.Optional;
 
 @Repository
-public class LockoutServiceRepository {
+public class AccountLockoutRepository {
     private final JdbcClient jdbc;
 
-    public LockoutServiceRepository(JdbcClient jdbc) {
+    public AccountLockoutRepository(JdbcClient jdbc) {
         this.jdbc = jdbc;
     }
 
@@ -22,9 +22,9 @@ public class LockoutServiceRepository {
         return jdbc.sql(sql).param("principal", principal).query(OffsetDateTime.class).optional();
     }
 
-    public void upsertLock(String principal, String lockFor) {
-        String sql = "INSERT INTO account_lockouts (principal, locked_until) VALUES (:principal, now() + CAST(:locked_until AS INTERVAL)) ON CONFLICT (principal) DO UPDATE SET locked_until = excluded.locked_until";
-         jdbc.sql(sql).params(Map.of("principal", principal,  "locked_until", lockFor)).update();
+    public OffsetDateTime upsertLock(String principal, String lockFor) {
+        String sql = "INSERT INTO account_lockouts (principal, locked_until) VALUES (:principal, now() + CAST(:locked_until AS INTERVAL)) ON CONFLICT (principal) DO UPDATE SET locked_until = excluded.locked_until RETURNING locked_until";
+          return jdbc.sql(sql).params(Map.of("principal", principal,  "locked_until", lockFor)).query(OffsetDateTime.class).single();
 
     }
 }
