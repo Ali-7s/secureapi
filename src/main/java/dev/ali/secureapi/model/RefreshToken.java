@@ -9,6 +9,4 @@ public record RefreshToken(Long id,
                            Instant expiresAt,
                            Instant revokedAt,
                            String replacedBy) {
-    // TODO: Possibly add logout_revoked boolean, tells whether revoke was caused by logout or not if replaced_by is ALSO null
-
 }

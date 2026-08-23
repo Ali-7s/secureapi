@@ -49,7 +49,6 @@ public class AuthController {
             HttpServletResponse response
     ) throws JsonProcessingException {
 
-        // TODO: ON ANOTHER LOGIN REVOKE ANY EXISTING TOKENS? OTHERWISE CAN SPAM LOGIN WITH A LOT OF ACTIVE REFRESH TOKENS
         UserSummaryDTO user = authService.loginUser(loginRequest.email(), loginRequest.password(), response);
 
         return ResponseEntity.ok(success("Successfully logged in", user));

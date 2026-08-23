@@ -38,9 +38,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
     private final ApplicationEventPublisher publisher;
+    private final LockoutService lockoutService;
 
 
-    public AuthService(CustomAuthenticationProvider authenticationProvider, JWTService jwtService, UserService userService, UserRepository userRepository, CookieService cookieService, PasswordEncoder passwordEncoder, RefreshTokenRepository refreshTokenRepository, ApplicationEventPublisher publisher) {
+    public AuthService(CustomAuthenticationProvider authenticationProvider, JWTService jwtService, UserService userService, UserRepository userRepository, CookieService cookieService, PasswordEncoder passwordEncoder, RefreshTokenRepository refreshTokenRepository, ApplicationEventPublisher publisher, LockoutService lockoutService) {
         this.authenticationProvider = authenticationProvider;
         this.jwtService = jwtService;
         this.userService = userService;
@@ -48,6 +49,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.refreshTokenRepository = refreshTokenRepository;
         this.publisher = publisher;
+        this.lockoutService = lockoutService;
     }
 
     public UserSummaryDTO registerUser(String username, String displayName, String email, String password, HttpServletResponse response) {
@@ -55,9 +57,11 @@ public class AuthService {
         return userService.createUser(user);
     }
 
-    // TODO: Add Bucket4J Rate Limiter?
     public UserSummaryDTO loginUser(String email, String password, HttpServletResponse response) throws JsonProcessingException {
-        log.info("Attempting login for user: {}", email);
+        if(lockoutService.isLocked(email)) {
+            publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.AUTH_FAILURE, email, Map.of()));
+            throw new ApiException(401, "Incorrect email or password. Please try again.", null);
+        }
 
         try {
 
@@ -71,6 +75,7 @@ public class AuthService {
             User user = userService.findByEmail(auth.getName())
                     .orElseThrow(() -> new ApiException(404, "User not found after authentication", null));
 
+            refreshTokenRepository.revoke(user.getId());
             UserSummaryDTO userSummaryDTO = new UserSummaryDTO();
             userSummaryDTO.setId(user.getId());
             userSummaryDTO.setUsername(user.getUsername());
@@ -88,8 +93,8 @@ public class AuthService {
 
         } catch (AuthenticationException e) {
             log.warn("Authentication failed for user: {} - Reason: {}", email, e.getMessage());
-
             publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.AUTH_FAILURE, email, Map.of("failure", e.getMessage())));
+            lockoutService.recordFailure(email);
             throw e;
         }
     }
