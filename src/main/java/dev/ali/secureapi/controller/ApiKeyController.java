@@ -3,6 +3,8 @@ package dev.ali.secureapi.controller;
 import dev.ali.secureapi.dto.ApiKeyDTO;
 import dev.ali.secureapi.dto.CreateApiKeyRequest;
 import dev.ali.secureapi.dto.NewApiKeyResponse;
+import dev.ali.secureapi.exception.ApiException;
+import dev.ali.secureapi.model.ApiKey;
 import dev.ali.secureapi.model.ApiResponse;
 import dev.ali.secureapi.service.ApiKeyService;
 import dev.ali.secureapi.utils.SecurityUtils;
@@ -38,6 +40,11 @@ public class ApiKeyController {
 
     @GetMapping("")
     public ResponseEntity<ApiResponse<List<ApiKeyDTO>>> listMyKeys(Authentication auth) {
+
+        if (auth.getPrincipal() instanceof ApiKey) {
+            throw new ApiException(403, "Authorization Denied", null);
+        }
+
         Long ownerId = SecurityUtils.getCurrentUser(auth).getId();
         return ResponseEntity.status(HttpStatus.OK).body(success("Keys returned", apiKeyService.listMyKeys(ownerId)));
 
