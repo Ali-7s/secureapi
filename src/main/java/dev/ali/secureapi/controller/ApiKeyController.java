@@ -8,6 +8,7 @@ import dev.ali.secureapi.model.ApiKey;
 import dev.ali.secureapi.model.ApiResponse;
 import dev.ali.secureapi.service.ApiKeyService;
 import dev.ali.secureapi.utils.SecurityUtils;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,6 +21,7 @@ import static dev.ali.secureapi.model.ApiResponse.success;
 
 @RestController
 @RequestMapping("/api/keys")
+@SecurityRequirement(name = "access_token")
 public class ApiKeyController {
 
     private final ApiKeyService apiKeyService;

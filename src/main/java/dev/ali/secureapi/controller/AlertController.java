@@ -5,6 +5,7 @@ import dev.ali.secureapi.model.Alert;
 import dev.ali.secureapi.model.ApiKey;
 import dev.ali.secureapi.model.ApiResponse;
 import dev.ali.secureapi.service.AlertService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -16,6 +17,7 @@ import static dev.ali.secureapi.model.ApiResponse.success;
 
 @RestController
 @RequestMapping("/api/alerts")
+@SecurityRequirement(name = "X-API-Key")
 public class AlertController {
 
     private final AlertService alertService;
