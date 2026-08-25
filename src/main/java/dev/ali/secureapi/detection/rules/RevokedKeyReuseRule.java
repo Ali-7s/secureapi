@@ -45,7 +45,7 @@ public class RevokedKeyReuseRule implements DetectionRule {
     @Override
     public List<RuleMatch> evaluate(OffsetDateTime now) {
         OffsetDateTime windowStart = now.minus(window());
-        return detectionRepository.countEventsByEntity(SecurityEventType.API_KEY_REJECTED, windowStart, now, threshold());
+        return detectionRepository.countEventsBySourceIp(SecurityEventType.API_KEY_REJECTED, windowStart, now, threshold());
     }
 
     @Override

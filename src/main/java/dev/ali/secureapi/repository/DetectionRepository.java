@@ -30,8 +30,14 @@ public class DetectionRepository {
         return jdbc.sql(sql).params(Map.of("window_start", Timestamp.from(windowStart.toInstant()), "window_end", Timestamp.from(windowEnd.toInstant()), "threshold", threshold)).query(RuleMatch.class).list();
     }
 
-    public List<RuleMatch> countEventsByEntity(SecurityEventType type, OffsetDateTime windowStart, OffsetDateTime windowEnd, int threshold) {
+    public List<RuleMatch> countEventsBySourceIp(SecurityEventType type, OffsetDateTime windowStart, OffsetDateTime windowEnd, int threshold) {
         String sql = "SELECT host(source_ip) as entity, COUNT(*) as count FROM security_events WHERE event_type = :type AND ((created_at >= :window_start) AND (created_at <= :window_end)) GROUP BY source_ip HAVING COUNT(*) >= :threshold ";
+        return jdbc.sql(sql).params(Map.of("window_start", Timestamp.from(windowStart.toInstant()), "window_end", Timestamp.from(windowEnd.toInstant()), "threshold", threshold, "type", type.name())).query(RuleMatch.class).list();
+    }
+
+
+    public List<RuleMatch> countEventsByPrincipal(SecurityEventType type, OffsetDateTime windowStart, OffsetDateTime windowEnd, int threshold) {
+        String sql = "SELECT principal as entity, COUNT(*) as count FROM security_events WHERE event_type = :type AND ((created_at >= :window_start) AND (created_at <= :window_end)) GROUP BY principal HAVING COUNT(*) >= :threshold ";
         return jdbc.sql(sql).params(Map.of("window_start", Timestamp.from(windowStart.toInstant()), "window_end", Timestamp.from(windowEnd.toInstant()), "threshold", threshold, "type", type.name())).query(RuleMatch.class).list();
     }
 

@@ -45,7 +45,7 @@ public class TokenReplayRule implements DetectionRule {
     @Override
     public List<RuleMatch> evaluate(OffsetDateTime now) {
         OffsetDateTime windowStart = now.minus(window());
-        return detectionRepository.countEventsByEntity(SecurityEventType.AUTH_REPLAY, windowStart, now, threshold());
+        return detectionRepository.countEventsBySourceIp(SecurityEventType.AUTH_REPLAY, windowStart, now, threshold());
     }
 
     @Override

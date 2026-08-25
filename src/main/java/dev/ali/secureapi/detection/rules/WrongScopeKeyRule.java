@@ -45,7 +45,7 @@ public class WrongScopeKeyRule implements DetectionRule {
     @Override
     public List<RuleMatch> evaluate(OffsetDateTime now) {
         OffsetDateTime windowStart = now.minus(window());
-        return detectionRepository.countEventsByEntity(SecurityEventType.AUTHZ_DENIED, windowStart, now, threshold());
+        return detectionRepository.countEventsBySourceIp(SecurityEventType.AUTHZ_DENIED, windowStart, now, threshold());
     }
 
     @Override

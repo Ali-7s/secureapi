@@ -45,7 +45,7 @@ public class KeyIdorRule implements DetectionRule {
     @Override
     public List<RuleMatch> evaluate(OffsetDateTime now) {
         OffsetDateTime windowStart = now.minus(window());
-        return detectionRepository.countEventsByEntity(SecurityEventType.AUTHZ_IDOR, windowStart, now, threshold());
+        return detectionRepository.countEventsByPrincipal(SecurityEventType.AUTHZ_IDOR, windowStart, now, threshold());
     }
 
     @Override
