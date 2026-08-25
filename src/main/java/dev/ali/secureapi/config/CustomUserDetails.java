@@ -1,6 +1,5 @@
 package dev.ali.secureapi.config;
 
-import dev.ali.secureapi.enums.Permission;
 import dev.ali.secureapi.model.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,13 +16,7 @@ public record CustomUserDetails(User user) implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
 
-        // Role
         authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
-
-        // Permissions
-        for (Permission p : user.getRole().getPermissions()) {
-            authorities.add(new SimpleGrantedAuthority(p.name()));
-        }
 
         return authorities;
     }
