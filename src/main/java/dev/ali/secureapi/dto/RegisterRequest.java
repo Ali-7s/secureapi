@@ -12,6 +12,6 @@ public record RegisterRequest(
         @Size(min = 1, max = 55, message = "Display name must be between 1-55 characters")
         String displayName,
         @NotNull(message = "Password cannot be null")
-        @Size(min = 8, message = "Password length must be 8 characters or more")
+        @Size(min = 12, message = "Password length must be 12 characters or more")
         String password) {
 }
