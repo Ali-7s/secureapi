@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,19 +23,29 @@ public class ApiKeyRepository {
 
     public Long insert(Long userId, String label, String keyPrefix, String keyHash, String scopes, Instant expiresAt) {
         String sql = "INSERT INTO api_keys(user_id, label, key_prefix, key_hash, scopes, expires_at) VALUES (:user_id, :label, :key_prefix, :key_hash, :scopes, :expires_at) RETURNING id";
-        return jdbc.sql(sql).params(Map.of("user_id", userId, "label", label, "key_prefix", keyPrefix, "key_hash", keyHash, "scopes", scopes, "expires_at", Timestamp.from(expiresAt))).query(Long.class).single();
+
+        HashMap<String, Object> hashMap = new HashMap<>();
+        hashMap.put("user_id", userId);
+        hashMap.put("label", label);
+        hashMap.put("key_prefix", keyPrefix);
+        hashMap.put("key_hash", keyHash);
+        hashMap.put("scopes", scopes);
+        hashMap.put("expires_at", Timestamp.from(expiresAt));
+
+        return jdbc.sql(sql).params(hashMap).query(Long.class).single();
     }
 
-    public List<ApiKeyDTO> findByUserId(Long userId) {
-        String sql = "SELECT id, label, key_prefix, scopes, created_at, last_used_at, expires_at, revoked_at FROM api_keys WHERE user_id = :userId";
-        // Return all,revoked or not
-        return jdbc.sql(sql).param("userId", userId).query(ApiKeyDTO.class).list();
+    public List<ApiKeyDTO> findByUserId(Long userId, int page, int size) {
+        int offset = page * size;
+        String sql = "SELECT id, label, key_prefix, scopes, created_at, last_used_at, expires_at, revoked_at FROM api_keys WHERE user_id = :userId ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
+
+        return jdbc.sql(sql).params(Map.of("userId", userId, "limit", size, "offset", offset)).query(ApiKeyDTO.class).list();
     }
 
-    public Long findOwnerId(Long keyId) {
+    public Optional<Long> findOwnerId(Long keyId) {
         String sql = "SELECT user_id FROM api_keys WHERE id = :keyId";
 
-        return jdbc.sql(sql).param("keyId", keyId).query(Long.class).single();
+        return jdbc.sql(sql).param("keyId", keyId).query(Long.class).optional();
     }
 
     public int revokeByIdAndOwner(Long keyId, Long ownerId) {

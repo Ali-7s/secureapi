@@ -9,6 +9,7 @@ import dev.ali.secureapi.exception.ApiException;
 import dev.ali.secureapi.model.SecurityContextEvent;
 import dev.ali.secureapi.repository.ApiKeyRepository;
 import dev.ali.secureapi.utils.ApiKeyGenerator;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -17,8 +18,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
+@Slf4j
 public class ApiKeyService {
 
     private final ApiKeyRepository apiKeyRepository;
@@ -50,15 +53,35 @@ public class ApiKeyService {
         return new NewApiKeyResponse(apiKeyDTO, secret);
     }
 
-    public List<ApiKeyDTO> listMyKeys(Long ownerId) {
-        return apiKeyRepository.findByUserId(ownerId);
+    public List<ApiKeyDTO> listMyKeys(Long ownerId,  int page, int size) {
+        size = Math.min(size, 100);
+        return apiKeyRepository.findByUserId(ownerId, page, size);
     }
 
     public void revokeKey(Long keyId, Long requesterId, boolean isAdmin) {
-        Long ownerId = apiKeyRepository.findOwnerId(keyId);
-        authzService.requireOwnerOrAdmin(ownerId, requesterId, isAdmin);
-        apiKeyRepository.revokeByIdAndOwner(keyId, ownerId);
-        publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.API_KEY_REVOKED, String.valueOf(requesterId), Map.of("keyId", String.valueOf(keyId))));
+
+
+            Optional<Long> ownerId = apiKeyRepository.findOwnerId(keyId);
+            if(ownerId.isPresent()) {
+                authzService.requireOwnerOrAdmin(ownerId.get(), requesterId, isAdmin);
+                apiKeyRepository.revokeByIdAndOwner(keyId, ownerId.get());
+                publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.API_KEY_REVOKED, String.valueOf(requesterId), Map.of("keyId", keyId.toString(), "requesterId", requesterId.toString())));
+            } else {
+                publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.AUTHZ_IDOR, String.valueOf(requesterId), Map.of("keyId", keyId.toString(), "requesterId", requesterId.toString())));
+                throw new ApiException(403, "An error occurred with the requested id", null);
+            }
+
+//
+//        try {
+//            Long ownerId = apiKeyRepository.findOwnerId(keyId);
+//            authzService.requireOwnerOrAdmin(ownerId, requesterId, isAdmin);
+//            apiKeyRepository.revokeByIdAndOwner(keyId, ownerId);
+//            publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.API_KEY_REVOKED, String.valueOf(requesterId), Map.of("keyId", keyId.toString())));
+//        } catch (Exception e) {
+//            log.error("An error occurred: ", e);
+//            throw new ApiException(403, "An error occurred with id: " + keyId, null);
+//        }
+
     }
 
 

@@ -30,6 +30,15 @@ public class UserService {
             throw new ResourceNotFoundException("User not found");
     }
 
+    public User findById(Long userId, Long requesterId, boolean isAdmin) {
+        authzService.requireOwnerOrAdmin(userId, requesterId, isAdmin);
+        Optional<User> user = userRepository.findById(userId);
+        if (user.isPresent()) {
+            return user.get();
+        } else
+            throw new ResourceNotFoundException("User not found");
+    }
+
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }

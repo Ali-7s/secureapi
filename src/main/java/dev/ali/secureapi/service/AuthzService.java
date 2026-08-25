@@ -23,10 +23,10 @@ public class AuthzService {
         return resourceOwnerId.equals(requesterId);
     }
 
-    public void requireOwnerOrAdmin(Long resourceOwnerId, Long requesterId, boolean isAdmin) {
-        if (!isOwner(resourceOwnerId, requesterId) && !isAdmin) {
-            publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.AUTHZ_IDOR, String.valueOf(requesterId), Map.of("resourceOwnerId", String.valueOf(resourceOwnerId))));
-            throw new ApiException(403, "Security violation: AUTHZ_IDOR", null);
+    public void requireOwnerOrAdmin(Long requestedId, Long requesterId, boolean isAdmin) {
+        if (!isOwner(requestedId, requesterId) && !isAdmin) {
+            publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.AUTHZ_IDOR, String.valueOf(requesterId), Map.of("requestedId", requestedId.toString())));
+            throw new ApiException(403, "An error occurred with the requested id", null);
         }
     }
 

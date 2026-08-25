@@ -21,8 +21,11 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserSummaryDTO>> getUserProfile(@PathVariable Long id) {
-        UserSummaryDTO userSummaryDTO = new UserSummaryDTO(userService.findById(id));
+    public ResponseEntity<ApiResponse<UserSummaryDTO>> getUserProfile(@PathVariable Long id, Authentication auth) {
+        Long requesterId = SecurityUtils.getCurrentUser(auth).getId();
+        boolean isAdmin = SecurityUtils.isAdmin(auth);
+
+        UserSummaryDTO userSummaryDTO = new UserSummaryDTO(userService.findById(id, requesterId, isAdmin));
         return ResponseEntity.ok(ApiResponse.success("User profile", userSummaryDTO));
     }
 
