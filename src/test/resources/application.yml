@@ -1,0 +1,5 @@
+jwt:
+  access:
+    secret:
+  refresh:
+    secret:
