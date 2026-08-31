@@ -50,9 +50,11 @@ event is still recorded, so rejecting an attack does not erase the record that i
 
 ## Running it
 
-You need JDK 17 to 21. Lombok 1.18.30 (pinned by Spring Boot 3.2.5) can't run its annotation
-processor on JDK 25 or newer, and the build fails with a long list of "cannot find symbol" errors
-on generated getters. If your default JDK is newer than 21:
+**Check your JDK first.** This is the step that decides whether anything else works.
+
+You need **JDK 17 to 21**. Lombok 1.18.30, pinned by Spring Boot 3.2.5, can't run its annotation
+processor on JDK 22 or newer, and the build fails with around 90 "cannot find symbol" errors on
+Lombok-generated getters. That looks like broken code and isn't. If your default JDK is newer:
 
 ```bash
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)
