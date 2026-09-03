@@ -1,3 +1,7 @@
+# Test-only. Signs tokens for a throwaway Testcontainers database that is
+# destroyed after each run. Production reads JWT_ACCESS_SECRET / JWT_REFRESH_SECRET
+# from the environment; see application.yml in src/main.
+
 jwt:
   access:
     secret: 0BXTELB2+ZIkYoxANMelJCEW0yVA3oe6PM2aQ57Jai0=
