@@ -1,5 +1,5 @@
 jwt:
   access:
-    secret:
+    secret: 0BXTELB2+ZIkYoxANMelJCEW0yVA3oe6PM2aQ57Jai0=
   refresh:
-    secret:
+    secret: yWSLYhBfPLUeBTgamKwrA+osniC/jtqrmj3Vp/2maSo=
