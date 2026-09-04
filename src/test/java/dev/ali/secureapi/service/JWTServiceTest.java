@@ -34,16 +34,37 @@ public class JWTServiceTest {
     }
 
     @Test
-    public void rejectsAccessTokenUsedAsRefreshToken() {
+     void rejectsAccessTokenUsedAsRefreshToken() {
         User user = new User();
         user.setId(1L);
         assertThat(jwtService.validateRefreshToken(user, jwtService.generateAccessToken(1L))).isFalse();
     }
 
     @Test
-    public void rejectsExpiredToken() {
+     void rejectsExpiredToken() {
         String falseToken = JWT.create().withSubject("1").withExpiresAt(new Date(System.currentTimeMillis() - 60_000)).sign(Algorithm.HMAC256(jwtProperties.access().secret()));
         assertThat(jwtService.validateAccessToken(falseToken)).isFalse();
+    }
+
+    @Test
+     void acceptsValidAccessToken() {
+        String token = jwtService.generateAccessToken(1L);
+        assertThat(jwtService.validateAccessToken(token)).isTrue();
+    }
+
+    @Test
+     void returnsSubjectFromValidAccessToken() {
+        String token = jwtService.generateAccessToken(1L);
+        assertThat(jwtService.getSubjectFromAccessToken(token)).isEqualTo("1");
+    }
+
+    @Test
+    void rejectsRefreshTokenBelongingToAnotherUser() {
+        String falseToken = JWT.create().withSubject("3").withExpiresAt(new Date(System.currentTimeMillis() + 60_000)).sign(Algorithm.HMAC256(jwtProperties.refresh().secret()));
+        User user = new User();
+        user.setId(1L);
+        assertThat(jwtService.validateRefreshToken(user, falseToken)).isFalse();
+
     }
 
 
