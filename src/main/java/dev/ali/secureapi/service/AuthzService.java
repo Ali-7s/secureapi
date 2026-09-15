@@ -32,7 +32,7 @@ public class AuthzService {
 
     public void requireScope(String storedScopes, ApiKeysScope required, ApiKey key) {
         if (!ApiKeysScope.parse(storedScopes).contains(required)) {
-            publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.AUTHZ_DENIED, key.id().toString(), Map.of("keyLabel", key.label(), "keyPrefix", key.keyPrefix(), "scopes", key.scopes())));
+            publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.AUTHZ_DENIED, key.userId().toString(), Map.of("keyId", key.id().toString(),"keyLabel", key.label(), "keyPrefix", key.keyPrefix(), "scopes", key.scopes())));
             throw new ApiException(403, "Invalid scopes", Map.of());
 
         }
