@@ -15,7 +15,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-public class ProfileUpdateTest extends AbstractIntegrationTest {
+ class ProfileUpdateTest extends AbstractIntegrationTest {
 
     private Integer firstId;
     private Integer secondId;
@@ -38,7 +38,7 @@ public class ProfileUpdateTest extends AbstractIntegrationTest {
     @Test
     @WithUserDetails(value = "test_1@example.test",
             setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    public void rejectsUpdateOfAnotherUsersProfile() throws Exception {
+     void rejectsUpdateOfAnotherUsersProfile() throws Exception {
         UpdateUserProfileRequest profileRequest = new UpdateUserProfileRequest("IGotAttacked", "AttackedMan");
 
         mockMvc.perform(put("/api/users/{id}", secondId)
@@ -67,7 +67,7 @@ public class ProfileUpdateTest extends AbstractIntegrationTest {
     @Test
     @WithUserDetails(value = "test_1@example.test",
             setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    public void rejectsUpdateWithoutCsrfToken() throws Exception {
+     void rejectsUpdateWithoutCsrfToken() throws Exception {
         UpdateUserProfileRequest profileRequest = new UpdateUserProfileRequest("IUpdated", "UpdatedMan");
 
         mockMvc.perform(put("/api/users/{id}", firstId)
@@ -87,7 +87,7 @@ public class ProfileUpdateTest extends AbstractIntegrationTest {
     @Test
     @WithUserDetails(value = "test_1@example.test",
             setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    public void updatesOwnProfile() throws Exception {
+     void updatesOwnProfile() throws Exception {
         UpdateUserProfileRequest profileRequest = new UpdateUserProfileRequest("IUpdated", "UpdatedMan");
         mockMvc.perform(put("/api/users/{id}", firstId)
                 .with(csrf())
@@ -106,7 +106,7 @@ public class ProfileUpdateTest extends AbstractIntegrationTest {
     @Test
     @WithUserDetails(value = "test_1@example.test",
             setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    public void leavesOmittedFieldsUnchanged() throws Exception {
+     void leavesOmittedFieldsUnchanged() throws Exception {
         mockMvc.perform(put("/api/users/{id}", firstId)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
