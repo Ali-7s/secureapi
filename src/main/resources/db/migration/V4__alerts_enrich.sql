@@ -1,1 +1,1 @@
-ALTER TABLE alerts ADD COLUMN acknowledged_at TIMESTAMP NULL;
+ALTER TABLE alerts ADD COLUMN acknowledged_at TIMESTAMPTZ NULL;

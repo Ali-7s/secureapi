@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS security_events (
     principal VARCHAR(255),
     source_ip INET NOT NULL,
     details JSONB,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_security_events_ip_type ON security_events (source_ip, event_type);
@@ -14,6 +14,6 @@ CREATE TABLE alerts(
     rule_name VARCHAR(500) NOT NULL,
     severity VARCHAR(20) NOT NULL,
     fingerprint VARCHAR(255) UNIQUE NOT NULL,
-    suppress_until TIMESTAMP NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    suppress_until TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
