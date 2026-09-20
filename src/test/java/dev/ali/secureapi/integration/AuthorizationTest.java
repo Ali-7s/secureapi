@@ -4,7 +4,6 @@ import dev.ali.secureapi.AbstractIntegrationTest;
 import dev.ali.secureapi.dto.CreateApiKeyRequest;
 import dev.ali.secureapi.dto.NewApiKeyResponse;
 import dev.ali.secureapi.dto.RegisterRequest;
-import dev.ali.secureapi.service.AlertService;
 import dev.ali.secureapi.service.ApiKeyService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
