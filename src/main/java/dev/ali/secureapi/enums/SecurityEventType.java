@@ -9,16 +9,9 @@ public enum SecurityEventType {
     // authorization
     AUTHZ_DENIED,
     AUTHZ_IDOR,
-
-    // jwt
-    JWT_EXPIRED,
-    JWT_TAMPERED,
-    JWT_MALFORMED,
-
     // sys
     RATE_LIMIT_HIT,
     ACCOUNT_LOCKED,
-
     //api keys
     API_KEY_CREATED,
     API_KEY_REVOKED,

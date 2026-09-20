@@ -71,17 +71,6 @@ public class ApiKeyService {
                 throw new ApiException(403, "An error occurred with the requested id", null);
             }
 
-//
-//        try {
-//            Long ownerId = apiKeyRepository.findOwnerId(keyId);
-//            authzService.requireOwnerOrAdmin(ownerId, requesterId, isAdmin);
-//            apiKeyRepository.revokeByIdAndOwner(keyId, ownerId);
-//            publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.API_KEY_REVOKED, String.valueOf(requesterId), Map.of("keyId", keyId.toString())));
-//        } catch (Exception e) {
-//            log.error("An error occurred: ", e);
-//            throw new ApiException(403, "An error occurred with id: " + keyId, null);
-//        }
-
     }
 
 

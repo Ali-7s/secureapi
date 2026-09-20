@@ -2,7 +2,6 @@ package dev.ali.secureapi.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.ali.secureapi.enums.SecurityEventType;
-import dev.ali.secureapi.exception.ApiException;
 import dev.ali.secureapi.model.ApiResponse;
 import dev.ali.secureapi.model.SecurityContextEvent;
 import io.github.bucket4j.Bucket;
@@ -20,7 +19,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
