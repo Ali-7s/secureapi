@@ -144,6 +144,8 @@ public class AuthService {
         cookieService.removeCookie(response, "refresh_token");
         refreshTokenRepository.revoke(user.getId());
         SecurityContextHolder.clearContext();
+        publisher.publishEvent(new SecurityContextEvent(this, SecurityEventType.AUTH_LOGOUT, user.getEmail(), Map.of("userId", String.valueOf(user.getId()), "username", user.getUsername())));
+
     }
 
 
