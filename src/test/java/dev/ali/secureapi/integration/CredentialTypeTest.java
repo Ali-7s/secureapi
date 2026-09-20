@@ -2,10 +2,7 @@ package dev.ali.secureapi.integration;
 
 import dev.ali.secureapi.AbstractIntegrationTest;
 import dev.ali.secureapi.dto.*;
-import dev.ali.secureapi.enums.ApiKeysScope;
-import dev.ali.secureapi.model.ApiKey;
 import dev.ali.secureapi.service.ApiKeyService;
-import dev.ali.secureapi.service.AuthzService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,8 +20,7 @@ class CredentialTypeTest extends AbstractIntegrationTest {
     private Integer firstId;
     @Autowired
     private ApiKeyService apiKeyService;
-    @Autowired
-    private AuthzService authzService;
+
 
     @BeforeEach
     void seed() throws Exception {
