@@ -44,6 +44,9 @@ public class ApiKeyController {
     @GetMapping("")
     public ResponseEntity<ApiResponse<List<ApiKeyDTO>>> listMyKeys(Authentication auth, @RequestParam(defaultValue = "0") int page,
                                                                    @RequestParam(defaultValue = "100") int size) {
+        if (page < 0 || size < 1) {
+            throw new ApiException(400, "page must be >= 0 and size must be >= 1", null);
+        }
 
         if (auth.getPrincipal() instanceof ApiKey) {
             throw new ApiException(403, "Authorization Denied", null);

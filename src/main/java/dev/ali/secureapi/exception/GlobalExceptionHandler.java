@@ -5,11 +5,14 @@ import dev.ali.secureapi.model.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,21 +59,42 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiResponse<Void>> handleApiException(ApiException ex) {
-        log.error("API Exception: {}", ex.getMessage());
+        log.warn("API Exception: {}", ex.getMessage());
         HttpStatus status = HttpStatus.valueOf(ex.getStatus());
         return new ResponseEntity<>(ApiResponse.error(ex.getMessage(), ex.getErrors()), status);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleBadCredentials() {
         return new ResponseEntity<>(ApiResponse.error("Incorrect email or password. Please try again.", null), UNAUTHORIZED);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
-        log.error("An error occurred at path: {}", servletRequest.getServletPath(), ex);
+        log.warn("An error occurred at path {}: {}", servletRequest.getServletPath(), ex.getMessage());
         return new ResponseEntity<>(ApiResponse.error("An unexpected internal server error occurred.", null), INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMalformedJSON(HttpMessageNotReadableException ex) {
+        log.warn("An error occurred at path {}: {}", servletRequest.getServletPath(), ex.getMessage());
+        return new ResponseEntity<>(ApiResponse.error("An error occurred with the request body.", null), BAD_REQUEST);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidContentType(HttpMediaTypeNotSupportedException ex) {
+        log.warn("An error occurred at path {}: {}", servletRequest.getServletPath(), ex.getMessage());
+        return new ResponseEntity<>(ApiResponse.error("An error occurred with the media type.", null), UNSUPPORTED_MEDIA_TYPE);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNonNumericPath(MethodArgumentTypeMismatchException ex) {
+        log.warn("An error occurred at path {}: {}", servletRequest.getServletPath(), ex.getMessage());
+        return new ResponseEntity<>(ApiResponse.error("An error occurred with the path.", null), BAD_REQUEST);
+    }
+
+
+
 
 
 }
