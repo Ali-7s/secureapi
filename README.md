@@ -23,6 +23,7 @@ with a focus on A09, Security Logging and Monitoring Failures.
 - [Endpoints](#endpoints)
 - [The audit trail](#the-audit-trail)
 - [The detection engine](#the-detection-engine)
+- [Trying the detections](#trying-the-detections)
 - [Security controls](#security-controls)
 - [Design decisions and accepted risks](#design-decisions-and-accepted-risks)
 - [Status](#status)
@@ -52,9 +53,10 @@ event is still recorded, so rejecting an attack does not erase the record that i
 
 **Check your JDK first.** This is the step that decides whether anything else works.
 
-You need **JDK 17 to 21**. Lombok 1.18.30, pinned by Spring Boot 3.2.5, can't run its annotation
-processor on JDK 22 or newer, and the build fails with around 90 "cannot find symbol" errors on
-Lombok-generated getters. That looks like broken code and isn't. If your default JDK is newer:
+You need **JDK 17 to 22**. Lombok 1.18.32, pinned by Spring Boot 3.2.5, runs its annotation
+processor through JDK 22. On a newer default (JDK 26, for instance) it fails and the build shows
+around 90 "cannot find symbol" errors on Lombok-generated getters. That looks like broken code and
+isn't. If your default JDK is newer:
 
 ```bash
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)
@@ -87,6 +89,10 @@ mvn spring-boot:run
 | API | `http://localhost:8080` |
 | Swagger UI | `http://localhost:8080/swagger-ui/index.html` |
 | OpenAPI spec | `http://localhost:8080/v3/api-docs` |
+
+The running API in Swagger UI:
+
+![Swagger UI for the SecureAPI endpoints](assets/swagger-ui.png)
 
 ## Authentication
 
@@ -129,13 +135,14 @@ scripts in
 
 ## The audit trail
 
-`security_events` is append-only. Eleven event types are wired and persisted:
+`security_events` is append-only. Twelve event types are wired and persisted:
 
 | Event | Emitted when |
 |---|---|
 | `AUTH_SUCCESS` | login succeeds |
 | `AUTH_FAILURE` | login fails, including against a locked or nonexistent account |
 | `AUTH_REPLAY` | a revoked refresh token is presented |
+| `AUTH_LOGOUT` | a session logs out |
 | `AUTHZ_DENIED` | an API key lacks the required scope |
 | `AUTHZ_IDOR` | a caller touches a resource it doesn't own |
 | `RATE_LIMIT_HIT` | the per-IP bucket is empty |
@@ -145,7 +152,7 @@ scripts in
 The `principal` column means different things depending on `event_type`. Auth events store the
 attempted email, because on a failed login the account might not exist, and spray traffic against
 unregistered addresses is worth recording (a foreign key here would reject exactly those rows).
-Resource events store an id instead: a user id on `AUTHZ_IDOR`, a key id on `AUTHZ_DENIED`. Every
+Resource events store an id instead: a user id on both `AUTHZ_IDOR` and `AUTHZ_DENIED`. Every
 rule filters on `event_type` before it reads `principal`.
 
 The schema follows one rule for this: owned resources get foreign keys, observed behaviour
@@ -157,6 +164,10 @@ Rules implement a `DetectionRule` interface and are injected as a list, so addin
 one `@Component` class. A scheduler sweeps the table on a timer instead of evaluating inline.
 Inline evaluation would run an aggregate query on every event, and event volume is highest during
 an attack, which is the worst time to be doing the most work. The scheduler's cost stays flat.
+
+The six rules firing against real attack traffic, read back from `GET /api/alerts`:
+
+![Detection engine output showing six alerts by severity](assets/detections.png)
 
 | Rule | Pattern | Severity | Suppression |
 |---|---|---|---|
@@ -190,6 +201,20 @@ CREATE UNIQUE INDEX idx_alerts_fingerprint_unacked
 Without the `WHERE` clause, acknowledging an alert would make the next attack from the same source
 collide with the handled one and get absorbed, so the system would go quiet right after someone
 responded to it. The partial index keeps the history and still lets a new incident open.
+
+## Trying the detections
+
+Each rule has a script in [`attacks/`](attacks/) that generates the traffic to trip it. Start the
+app, run one, and the matching alert shows up in `GET /api/alerts` within about ten seconds.
+
+| Script | Raises |
+|---|---|
+| `brute_force.sh` | `BRUTE_FORCE` |
+| `password_spray.sh` | `PASSWORD_SPRAY` |
+| `key_idor.sh` | `KEY_IDOR` |
+| `wrong_scope_key.sh` | `WRONG_SCOPE_KEY` |
+| `revoked_key_replay.sh` | `REVOKED_KEY_REPLAY` |
+| `token_replay.sh` | `TOKEN_REPLAY` |
 
 ## Security controls
 
@@ -264,23 +289,19 @@ lock look already expired.
 
 ## Status
 
-Verified by hand against a running instance: authentication, the API-key lifecycle with ownership
-and scope checks, the audit pipeline, all six detection rules with suppression, account lockout,
-and rate limiting.
+Tested end to end. An automated suite of 36 tests runs the real filter chain against a real
+PostgreSQL through Testcontainers, and asserts the audit row each action writes, not just the status
+code:
 
-Unit tests cover API key generation and JWT verification, including rejection of tokens signed
+- `ProfileUpdateTest`, `AuthorizationTest` and `CredentialTypeTest` cover ownership, admin access,
+API-key scope enforcement, and the session-versus-key credential split.
+- `DetectionRuleTest` covers every rule: thresholds, the look-back window, brute force versus
+spraying, principal grouping, and alert deduplication within a suppression bucket.
+- Unit tests cover API key generation and JWT verification, including rejection of tokens signed
 with an unknown secret, modified after signing, expired, or presented to the wrong verifier.
 
-Not done yet:
-
-- Integration tests. Nothing yet exercises the endpoints, database or filter chain end to end, so the
-authorization and detection behaviour above rests on manual verification rather than an automated
-suite. This is the largest gap.
-- Four event types are declared but not wired: `AUTH_LOGOUT` and the three `JWT_*` failures.
-- Client errors that Spring rejects before reaching a controller (malformed JSON, a missing
-`Content-Type`, a non-numeric path variable, a negative page size) currently return 500 rather
-than 400.
-- Attack scripts and a threat model.
+Each test class was checked with mutation testing: the production code was deliberately broken to
+confirm a test failed.
 
 ## Stack
 
